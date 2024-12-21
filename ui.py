@@ -11,7 +11,7 @@ import time
 
 
 
-data_path = '/data/ncair-data.txt'
+data_path = 'ncair-data.txt'
 
 with open(data_path, 'r') as file:
     text = file.read()
