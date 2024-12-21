@@ -28,7 +28,7 @@ parts = [text[i:j] for i, j in zip([0] + split_indices, split_indices + [None])]
 
 
 ### Functions and paths
-tokenizer_path = "/bert_tokenizer"
+tokenizer_path = "bert_tokenizer"
 
 device = torch.device(
         "cuda" if torch.cuda.is_available() else "cpu"
