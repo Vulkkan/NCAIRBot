@@ -10,13 +10,16 @@ import os
 import time
 
 
-
-data_path = 'ncair-data.txt'
+# Load data
+########################################
+data_path = '/data/ncair-data.txt'
 
 with open(data_path, 'r') as file:
     text = file.read()
 
-## Chunking
+
+## Chunk data
+########################################
 num_parts = 10
 
 full_stops_indices = [i for i, char in enumerate(text) if char == '.']
@@ -26,32 +29,17 @@ split_indices = [full_stops_indices[(idx+1)*full_stops_per_part] for idx in rang
 parts = [text[i:j] for i, j in zip([0] + split_indices, split_indices + [None])]
 
 
-
-### Functions and paths
-tokenizer_path = "bert_tokenizer"
-
-device = torch.device(
-        "cuda" if torch.cuda.is_available() else "cpu"
-)
-
-
-# Loading tokenizer
+# Generate response
 ########################################
+def answer_question(context, question):
+    tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+    model = BertForQuestionAnswering.from_pretrained('bert-large-uncased-whole-word-masking-finetuned-squad')
 
-def load_model_and_tokenizer(tokenizer_path):
-    model = BertForQuestionAnswering.from_pretrained('bert-base-uncased')
-    model.eval()  # Set model to evaluation mode
+    device = torch.device(
+        "cuda" if torch.cuda.is_available() else "cpu"
+    )
+    model.to(device)
 
-    tokenizer = BertTokenizer.from_pretrained(tokenizer_path)
-
-    return model.to(device), tokenizer
-
-
-model, tokenizer = load_model_and_tokenizer(tokenizer_path)
-
-
-
-def answer_question(context, question, model, tokenizer):
     inputs = tokenizer.encode_plus(
         question, context,
         return_tensors='pt',
@@ -83,7 +71,7 @@ def answer_question(context, question, model, tokenizer):
 def reply(prompt, parts):
     answers_dict = {}
     for i, part in enumerate(parts):
-        answer, confidence = answer_question(part, prompt, model, tokenizer)
+        answer, confidence = answer_question(part, prompt)
         answers_dict[f"Chunk {i+1}"] = {answer :confidence}
 
         max_score = max(answers_dict.values(), key=lambda x: list(x.values())[0])
@@ -96,7 +84,9 @@ def botResponse(prompt):
     return response
 
 
-st.title("NCAIR bot")
+# Streamlit codes
+########################################
+st.title("NCAIRBot")
 
 
 
@@ -115,7 +105,11 @@ if prompt := st.chat_input():
     st.session_state.messages.append({"role": "user", "content": prompt})
 
     # Display user message with a unique key and custom avatar
-    st_message(prompt, is_user=True, key=f"user_{len(st.session_state.messages)}")
+    st_message(
+        prompt, 
+        is_user=True, 
+        key=f"user_{len(st.session_state.messages)}"
+    )
 
     # Generate bot response
     response = botResponse(prompt)
